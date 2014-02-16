@@ -6,13 +6,14 @@ import ssl
 import string
 import urllib.request
 
+cols = ',avg_rating,call_number,collection,contributor,coverage,creator,date,description,downloads,foldoutcount,format,headerImage,identifier,imagecount,language,licenseurl,mediatype,month,num_reviews,oai_updatedate,publicdate,publisher,rights,scanningcentre,source,subject,title,type,volume,week,year'
+
 def getlist(buffer = True, filename = 'all.json', limit = 2147483647):
     """
     buffer - read from file? (always writes)
     """
 
     # https://archive.org/advancedsearch.php?q=collection:prelinger
-    cols = ',avg_rating,call_number,collection,contributor,coverage,creator,date,description,downloads,foldoutcount,format,headerImage,identifier,imagecount,language,licenseurl,mediatype,month,num_reviews,oai_updatedate,publicdate,publisher,rights,scanningcentre,source,subject,title,type,volume,week,year'
     url = 'https://archive.org/advancedsearch.php?q=collection:prelinger&output=json' \
           + '&rows=' + str(limit) + cols.replace(',','&fl%5B%5D=')
 
@@ -31,11 +32,19 @@ def getlist(buffer = True, filename = 'all.json', limit = 2147483647):
 
     return full
 
-#for doc in json.loads(getlist(buffer=False,limit=5))['response']['docs']:
-for doc in json.loads(getlist(buffer=True))['response']['docs']:
-    id = doc['identifier']
-    try:
-        format = doc['format']
-    except KeyError:
-        format = "[NOFORMAT]"
-    print( id + "\n   " + str(format))
+docs = json.loads(getlist(buffer=True))['response']['docs']
+
+# fill in data gaps
+for doc in docs:
+    if not 'date' in doc and not 'year' in doc:
+        doc['date'] = '0000-01-01T00:00:00Z'
+        doc['year'] = '0000'
+    elif not 'date' in doc: doc['date'] = str(doc['year']) + '-01-01T00:00:00Z'
+    elif not 'year' in doc: doc['year'] = int(doc['date'][:4])
+    for col in cols.split(','):
+        if not col in doc:
+            doc[col] = None
+
+# iterate by date
+for doc in sorted(docs, key=lambda d: d['date']):
+    print(str(doc['date']) + "  " + str(doc['year']) + "     " + doc['identifier'])

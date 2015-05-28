@@ -32,6 +32,9 @@ def getlist(buffer = True, filename = 'all.json', limit = 2147483647):
 
     return full
 
+# getvidmeta
+# https://archive.org/details/identifier&output=json
+
 docs = json.loads(getlist(buffer=True))['response']['docs']
 
 # fill in data gaps
